@@ -119,7 +119,7 @@
                 <Button Content="←  KEZDŐLAP" Style="{StaticResource SecondaryButton}" Click="Back_Click"/>
             </StackPanel>
         </Grid>
-
+        <!-- 4. Fejlesztés: Statisztikai kártyák: pontszám, hátralévő idő és hibák -->
         <Grid Grid.Row="2" Margin="0,0,0,18">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
