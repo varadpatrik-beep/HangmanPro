@@ -4,6 +4,7 @@
         Title="Hangman Pro | Játék" Width="1170" Height="850" MinWidth="940" MinHeight="740"
         WindowStartupLocation="CenterScreen" Background="#0B1020" FontFamily="Segoe UI"
         PreviewTextInput="Window_PreviewTextInput">
+    <!-- 1. Fejlesztés: Új sötétkék alap és türkiz kiemelések beállítása -->
     <Window.Resources>
         <Style x:Key="KeyboardBtnStyle" TargetType="Button">
             <Setter Property="Width" Value="45"/>
@@ -80,6 +81,7 @@
             <Setter Property="Margin" Value="0,6,0,0"/>
         </Style>
     </Window.Resources>
+
     <Grid Margin="30,26">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
