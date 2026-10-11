@@ -204,6 +204,7 @@
                         <TextBlock x:Name="MessageText" Foreground="#69E3CC" FontSize="17" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap" MinHeight="29"/>
                     </StackPanel>
                     <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalAlignment="Center">
+                        <!-- 5. Fejlesztés: Egységesített, lekerekített virtuális billentyűzet -->
                         <WrapPanel x:Name="KeyboardPanel" HorizontalAlignment="Center"/>
                     </ScrollViewer>
                     <TextBlock Grid.Row="5" Text="A helyes tipp minden előfordulást felfed." Foreground="#8297B5" TextAlignment="Center" Margin="0,14,0,0"/>
