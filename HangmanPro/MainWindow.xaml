@@ -164,6 +164,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="AKASZTÓFA" Foreground="#94A6C0" FontSize="12" FontWeight="Bold"/>
                     <Viewbox Grid.Row="2" Stretch="Uniform" MaxHeight="330">
+                        <!-- 6. Fejlesztés: Akasztófa ábra dedikált panelje, új színekkel -->
                         <Canvas Width="210" Height="300">
                             <Line X1="10" Y1="290" X2="200" Y2="290" Stroke="#48607B" StrokeThickness="8" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
                             <Line X1="52" Y1="290" X2="52" Y2="20" Stroke="#48607B" StrokeThickness="8" StrokeEndLineCap="Round" StrokeStartLineCap="Round"/>
