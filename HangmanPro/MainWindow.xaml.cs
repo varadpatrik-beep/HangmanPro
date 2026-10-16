@@ -35,10 +35,9 @@ namespace HangmanPro
         private List<char> guessedLetters;
         private int mistakes;
 
-        // ÚJ VÁLTOZÓK A FOLYAMATOS JÁTÉKHOZ
         private int score = 0;
         private int successfulWords = 0;
-        private int currentSessionId = 0; // Ez akadályozza meg a hibákat, ha gyorsan kattintasz az Új Játékra
+        private int currentSessionId = 0;
 
         private string playerName;
         private UIElement[] hangmanParts;
@@ -51,6 +50,9 @@ namespace HangmanPro
         private int timePenalty;
         private readonly int selectedDuration;
         private bool gameRunning;
+
+        // BUG-02 FIX: Osztályszintű Random a szóismétlődés ellen
+        private Random rnd = new Random();
 
         public MainWindow(string name, int difficultyIndex, int duration, string category)
         {
@@ -148,7 +150,8 @@ namespace HangmanPro
                     new WordItem("MEMÓRIA", "Gyors, ideiglenes adattároló"),
                     new WordItem("WEBOLDAL", "Böngészőben megjelenő internetes oldal")
                 }},
-                { "Hardcore IT & Hálózat", new List<WordItem> {
+                // BUG-05 FIX: Nehézség névütközés miatt átnevezve "Profi IT & Hálózat"-ra
+                { "Profi IT & Hálózat", new List<WordItem> {
                     new WordItem("ROUTER", "Hálózati forgalmat irányító eszköz"),
                     new WordItem("TŰZFAL", "Szűri a hálózati forgalmat"),
                     new WordItem("PROTOKOLL", "Kommunikációs szabályrendszer"),
@@ -232,10 +235,9 @@ namespace HangmanPro
             };
         }
 
-        // TELJESEN ÚJ JÁTÉK INDÍTÁSA (Lenullázza a pontokat és az időt)
         private void StartNewGame()
         {
-            currentSessionId++; // Új azonosítót kap a session, így nem akadnak össze a szálak
+            currentSessionId++;
 
             score = 0;
             successfulWords = 0;
@@ -250,21 +252,23 @@ namespace HangmanPro
 
             if (maxTime != 0) timer.Start();
 
-            // Visszatöltjük az összes szót a kategóriából
-            unusedWords = new List<WordItem>(wordCategories[activeCategory]);
+            // BUG-03 FIX: Csak akkor töltjük újra az unusedWords listát, ha null. Így nem keveri vissza egyből a már kitalált szavakat.
+            if (unusedWords == null)
+            {
+                unusedWords = new List<WordItem>(wordCategories[activeCategory]);
+            }
 
             LoadNextWord();
         }
 
-        // KÖVETKEZŐ SZÓ BETÖLTÉSE (Az idő és a pontszám marad)
         private void LoadNextWord()
         {
             if (unusedWords == null || unusedWords.Count == 0)
             {
-                unusedWords = new List<WordItem>(wordCategories[activeCategory]); // Ha elfogyott, újratöltjük
+                unusedWords = new List<WordItem>(wordCategories[activeCategory]);
             }
 
-            Random rnd = new Random();
+            // BUG-02 FIX: Itt már az osztályszintű rnd-t használjuk
             int index = rnd.Next(unusedWords.Count);
             WordItem selectedItem = unusedWords[index];
 
@@ -284,14 +288,12 @@ namespace HangmanPro
 
             guessedLetters = new List<char>();
             mistakes = 0;
-            gameRunning = true; // Az időzítő automatikusan továbbmegy, ha van időkorlát
+            gameRunning = true;
 
             MessageText.Text = "Válassz egy betűt a kezdéshez!";
-            MessageText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#69E3CC")); // Alap zöldes szín visszaállítása
+            MessageText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#69E3CC"));
 
             MistakesText.Text = "0 / 6";
-
-            // Itt írjuk ki dinamikusan, hogy hány szót talált ki eddig
             WordInfoText.Text = $"{currentWord.Replace(" ", "").Length} betű  •  Kitalált szavak eddig: {successfulWords}";
 
             UpdateWordDisplay();
@@ -315,10 +317,12 @@ namespace HangmanPro
 
         private void Letter_Click(object sender, RoutedEventArgs e)
         {
+            // BUG-04 FIX: Sorrendi hiba javítása. Az ellenőrzés legelőször fut le, megakadályozva a felesleges kivételeket.
+            if (!gameRunning) return;
+
             Button btn = (Button)sender;
             char letter = char.Parse(btn.Content.ToString());
 
-            if (!gameRunning) return;
             btn.IsEnabled = false;
             guessedLetters.Add(letter);
 
@@ -337,7 +341,6 @@ namespace HangmanPro
                 mistakes++;
                 MistakesText.Text = $"{mistakes} / {hangmanParts.Length}";
 
-                // Az időbüntetés maradt, így minden hiba a globális játékidőből von le! Izgalmas!
                 if (maxTime != 0) timeLeft = Math.Max(0, timeLeft - timePenalty);
                 TimeProgress.Value = timeLeft;
                 UpdateTimeText();
@@ -439,7 +442,6 @@ namespace HangmanPro
             }
         }
 
-        // ASZINKRON GYŐZELEM ELLENŐRZÉS (1.5 mp szünettel a szavak között)
         private async void CheckWin()
         {
             bool isWon = true;
@@ -454,11 +456,9 @@ namespace HangmanPro
 
             if (isWon)
             {
-                // gameRunning = false miatt az időzítő SZÜNETEL amíg átlépünk a következő szóra!
                 gameRunning = false;
                 successfulWords++;
 
-                // Extra bónusz a helyes szó kitalálásáért
                 score += 50 + ((int)currentDifficulty * 20);
                 UpdateScore();
 
@@ -466,13 +466,10 @@ namespace HangmanPro
                 MessageText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#43B581"));
                 DisableKeyboard();
 
-                // Lementjük, melyik körben vagyunk, nehogy egy "Új játék" gombnyomás megzavarja
                 int capturedSession = currentSessionId;
 
-                // Várakozás másfél másodpercig
                 await Task.Delay(1500);
 
-                // Ha nem indított új játékot közben a felhasználó, és még van idő
                 if (currentSessionId == capturedSession && (maxTime == 0 || timeLeft > 0))
                 {
                     LoadNextWord();
@@ -480,7 +477,6 @@ namespace HangmanPro
             }
         }
 
-        // VERESÉG ÉS VÉGSŐ STATISZTIKA KIÍRÁSA
         private void CheckLoss(bool timeout = false)
         {
             if (mistakes >= hangmanParts.Length || (maxTime != 0 && timeLeft <= 0))
@@ -488,7 +484,6 @@ namespace HangmanPro
                 timer.Stop();
                 gameRunning = false;
 
-                // Formázott, több soros végeredmény kiírás
                 string reason = timeout || (maxTime != 0 && timeLeft <= 0) ? "⏳ Lejárt az idő!" : "💀 Vesztettél!";
                 MessageText.Text = $"{reason}\nA szó: {currentWord}\nJáték vége! Kitalált szavak: {successfulWords}  •  Összpontszám: {score}";
 
@@ -509,7 +504,7 @@ namespace HangmanPro
         {
             timer.Stop();
             gameRunning = false;
-            currentSessionId++; // Blokkoljuk az esetlegesen futó szálakat
+            currentSessionId++;
 
             LoginWindow login = new LoginWindow();
             login.Show();
